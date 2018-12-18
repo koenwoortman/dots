@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+# dots - Dotfiles manager
+
+VERSION=0.1.0
+
+CWD=$(pwd)
+DOTS_HOME="$HOME"
+DOTS_DIR="$HOME/dotfiles"
+DOTS_CONFIG="$DOTS_DIR/dotsrc.json"
+
+usage() {
+  cat << EOF
+usage: ${SCRIPT_NAME} <command>
+
+Relies on dotsrc.json in dotfiles dir.
+
+Commands:
+  sync       Sync symbolic links
+  help       display this message
+EOF
+}
+
+error() {
+  [[ -z "$1" ]] || printf '%s: %s\n' "${SCRIPT_NAME}" "$1"
+  printf "Try '%s help' for more information.\\n" "${SCRIPT_NAME}"
+  exit 1
+} >&2
+
+delete_symlinks() {
+  if [ "$( jq 'has("symlinks")' $DOTS_CONFIG )" = 'true' ]; then
+    local symlinks=$( jq -r ".symlinks|to_entries|map(.key)|.[]" $DOTS_CONFIG )
+
+    for key in $symlinks; do
+      local value=$( jq -r ".symlinks.\"${key}\"" $DOTS_CONFIG)
+
+      if [ -h "$DOTS_HOME/$value" ]; then
+        $(unlink $DOTS_HOME/$value)
+      fi
+    done
+  fi
+}
+
+setup_symlinks() {
+  if [ "$( jq 'has("symlinks")' $DOTS_CONFIG )" = 'true' ]; then
+    local symlinks=$( jq -r ".symlinks|to_entries|map(.key)|.[]" $DOTS_CONFIG )
+
+    for key in $symlinks; do
+      local value=$( jq -r ".symlinks.\"${key}\"" $DOTS_CONFIG)
+      local dir=$( dirname "$DOTS_HOME/$value" )
+
+      mkdir -p $dir
+
+      if [ ! -h "$DOTS_HOME/$value" ]; then
+        $(ln -s $DOTS_DIR/$key $DOTS_HOME/$value)
+      else
+        echo "Symlink \"${value}\" already exists in: ${DOTS_HOME}"
+      fi
+    done
+  fi
+}
+
+sync() {
+  # Delete all symlinks
+  delete_symlinks
+
+  # Create symlinks
+  setup_symlinks
+}
+
+# create DOTS_DIR if it doesn't exist
+[ -d "$DOTS_DIR" ] || mkdir -p "$DOTS_DIR"
+
+COMMAND="$1"
+
+case "${COMMAND}" in
+  'sync')
+    sync
+    ;;
+  'help')
+    usage
+    exit
+    ;;
+  '')
+    error 'Missing command'
+    ;;
+  *)
+    error 'Invalid command'
+esac
