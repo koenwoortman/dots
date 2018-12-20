@@ -60,12 +60,27 @@ setup_symlinks() {
   fi
 }
 
+run_hooks() {
+  if [ "$( jq 'has("hooks")' $DOTS_CONFIG )" = 'true' ]; then
+    local hooks=$( jq -r ".hooks[]" $DOTS_CONFIG )
+
+    while read -r hook; do
+      eval $hook
+    done <<< "$hooks"
+  fi
+}
+
 sync() {
   # Delete all symlinks
   delete_symlinks
 
   # Create symlinks
   setup_symlinks
+
+  # Run hooks
+  run_hooks
+
+  echo 'Sync done!'
 }
 
 # create DOTS_DIR if it doesn't exist
