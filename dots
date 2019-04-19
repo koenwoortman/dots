@@ -1,23 +1,21 @@
 #!/usr/bin/env bash
 
-# dots - Dotfiles manager
-
-VERSION=0.1.0
-
-CWD=$(pwd)
-DOTS_HOME="$HOME"
-DOTS_DIR="$HOME/dotfiles"
-DOTS_CONFIG="$DOTS_DIR/dotsrc.json"
+CWD=$( pwd )
+DOTFILES_DIR=${DOTFILES_DIR:-~/dotfiles}
+SCRIPT_NAME=${0##*/}
 
 usage() {
   cat << EOF
 usage: ${SCRIPT_NAME} <command>
 
-Relies on dotsrc.json in dotfiles dir.
+Manage dotfiles accross machines.
+Requires a dotsrc.json in ${DOTFILES_DIR}
 
 Commands:
-  sync       Sync symbolic links
-  help       display this message
+  init       Initialize dotfiles directory
+  sync       Update dotfiles
+  help       Display this message
+
 EOF
 }
 
@@ -27,78 +25,37 @@ error() {
   exit 1
 } >&2
 
-delete_symlinks() {
-  if [ "$( jq 'has("symlinks")' $DOTS_CONFIG )" = 'true' ]; then
-    local symlinks=$( jq -r ".symlinks|to_entries|map(.key)|.[]" $DOTS_CONFIG )
+dots_sync() {
+  cd "$DOTFILES_DIR"
+  echo "Changed to $PWD"
 
-    for key in $symlinks; do
-      local value=$( jq -r ".symlinks.\"${key}\"" $DOTS_CONFIG)
-
-      if [ -h "$DOTS_HOME/$value" ]; then
-        $(unlink $DOTS_HOME/$value)
-      fi
-    done
+  dotsfile="dotsrc.json"
+  if ! [ -e "$dotsfile" ]; then
+    echo "No $dotsfile found in $PWD"; exit 1
   fi
+
+  dotsrc=$(<$dotsfile)
+  echo "Read $dotsfile"
+
 }
 
-setup_symlinks() {
-  if [ "$( jq 'has("symlinks")' $DOTS_CONFIG )" = 'true' ]; then
-    local symlinks=$( jq -r ".symlinks|to_entries|map(.key)|.[]" $DOTS_CONFIG )
+parse_arguments() {
+  COMMAND=$1
 
-    for key in $symlinks; do
-      local value=$( jq -r ".symlinks.\"${key}\"" $DOTS_CONFIG)
-      local dir=$( dirname "$DOTS_HOME/$value" )
-
-      mkdir -p $dir
-
-      if [ ! -h "$DOTS_HOME/$value" ]; then
-        $(ln -s $DOTS_DIR/$key $DOTS_HOME/$value)
-      else
-        echo "Symlink \"${value}\" already exists in: ${DOTS_HOME}"
-      fi
-    done
-  fi
+  case "${COMMAND}" in
+    'sync')
+      dots_sync
+      ;;
+    'help')
+      usage
+      exit
+      ;;
+    '')
+      error 'Missing command'
+      ;;
+    *)
+      error 'Invalid command'
+  esac
 }
 
-run_hooks() {
-  if [ "$( jq 'has("hooks")' $DOTS_CONFIG )" = 'true' ]; then
-    local hooks=$( jq -r ".hooks[]" $DOTS_CONFIG )
-
-    while read -r hook; do
-      eval $hook
-    done <<< "$hooks"
-  fi
-}
-
-sync() {
-  # Delete all symlinks
-  delete_symlinks
-
-  # Create symlinks
-  setup_symlinks
-
-  # Run hooks
-  run_hooks
-
-  echo 'Sync done!'
-}
-
-# create DOTS_DIR if it doesn't exist
-[ -d "$DOTS_DIR" ] || mkdir -p "$DOTS_DIR"
-
-COMMAND="$1"
-
-case "${COMMAND}" in
-  'sync')
-    sync
-    ;;
-  'help')
-    usage
-    exit
-    ;;
-  '')
-    error 'Missing command'
-    ;;
-  *)
-    error 'Invalid command'
-esac
+parse_arguments "$@"
