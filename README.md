@@ -1,4 +1,13 @@
-# Dots
+# dots
+
+Script to keep my dotfiles in sync across multiple machines
+
+## Usage
+
+Sync with dotfiles repo
+```
+dots sync
+```
 
 ## License
 
