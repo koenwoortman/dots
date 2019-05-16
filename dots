@@ -25,6 +25,21 @@ error() {
   exit 1
 } >&2
 
+push_changes() {
+	git push
+}
+
+pull_changes() {
+  file="$DOTFILES_DIR/dotsrc.json"
+  dotsrc=$(<$file)
+
+  if [ -e "$dotsrc" ]; then
+    error "No dotsrc.json found";
+  fi
+
+	git pull
+}
+
 dots_sync() {
   cd $DOTFILES_DIR
   remote_ref=$(git rev-parse origin)
@@ -34,19 +49,12 @@ dots_sync() {
   if [ "$local_ref" == "$remote_ref" ]; then
 		return 0;
 	elif [ "$local_ref" == "$merge_base"  ]; then
-		git pull
+		pull_changes
 	elif [ "$remote_ref" == "$merge_base"  ]; then
-		git push
+		push_changes
 	else
 		error 'Dotfiles diverged: manually fix your repo'
 	fi
-
-  file="$DOTFILES_DIR/dotsrc.json"
-  dotsrc=$(<$file)
-
-  if [ -e "$dotsrc" ]; then
-    error "No dotsrc.json found";
-  fi
 }
 
 parse_arguments() {
