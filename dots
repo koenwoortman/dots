@@ -26,17 +26,27 @@ error() {
 } >&2
 
 dots_sync() {
-  cd "$DOTFILES_DIR"
-  echo "Changed to $PWD"
+  cd $DOTFILES_DIR
+  remote_ref=$(git rev-parse origin)
+  local_ref=$(git rev-parse @)
+  merge_base=$(git merge-base @ origin)
 
-  dotsfile="dotsrc.json"
-  if ! [ -e "$dotsfile" ]; then
-    echo "No $dotsfile found in $PWD"; exit 1
+  if [ "$local_ref" == "$remote_ref" ]; then
+		return 0;
+	elif [ "$local_ref" == "$merge_base"  ]; then
+		git pull
+	elif [ "$remote_ref" == "$merge_base"  ]; then
+		git push
+	else
+		error 'Dotfiles diverged: manually fix your repo'
+	fi
+
+  file="$DOTFILES_DIR/dotsrc.json"
+  dotsrc=$(<$file)
+
+  if [ -e "$dotsrc" ]; then
+    error "No dotsrc.json found";
   fi
-
-  dotsrc=$(<$dotsfile)
-  echo "Read $dotsfile"
-
 }
 
 parse_arguments() {
