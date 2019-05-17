@@ -38,6 +38,16 @@ pull_changes() {
   fi
 
 	git pull
+
+  new_dotsrc=$(<$file)
+
+  if [ -e "$new_dotsrc" ]; then
+    error "No dotsrc.json found";
+  fi
+
+	if [ "$( jq 'has("symlinks")' $new_dotsrc  )" = 'true'  ]; then
+		echo "has symlinks"
+	fi
 }
 
 dots_sync() {
