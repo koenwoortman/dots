@@ -37,7 +37,7 @@ pull_changes() {
     error "No dotsrc.json found";
   fi
 
-	git pull
+  git pull
 
   new_dotsrc=$(<$file)
 
@@ -45,9 +45,9 @@ pull_changes() {
     error "No dotsrc.json found";
   fi
 
-	if [ "$( jq 'has("symlinks")' $new_dotsrc  )" = 'true'  ]; then
-		echo "has symlinks"
-	fi
+  if [ "$( jq 'has("symlinks")' $new_dotsrc  )" = 'true'  ]; then
+    echo "has symlinks"
+  fi
 }
 
 dots_sync() {
@@ -57,14 +57,14 @@ dots_sync() {
   merge_base=$(git merge-base @ origin)
 
   if [ "$local_ref" == "$remote_ref" ]; then
-		return 0;
-	elif [ "$local_ref" == "$merge_base"  ]; then
-		pull_changes
-	elif [ "$remote_ref" == "$merge_base"  ]; then
-		push_changes
-	else
-		error 'Dotfiles diverged: manually fix your repo'
-	fi
+    return 0;
+  elif [ "$local_ref" == "$merge_base"  ]; then
+    pull_changes
+  elif [ "$remote_ref" == "$merge_base"  ]; then
+    push_changes
+  else
+    error 'Dotfiles diverged: manually fix your repo'
+  fi
 }
 
 parse_arguments() {
