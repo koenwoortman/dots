@@ -26,7 +26,7 @@ error() {
 } >&2
 
 push_changes() {
-	git push
+  git push
 }
 
 pull_changes() {
