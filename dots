@@ -16,8 +16,9 @@ All I need is:
   - A ${CONFIG_FILE} in '${DOTFILES_DIR}'
 
 Commands:
-  push       Push dotfiles to git repo
-  pull       Pull dotfiles from a git repo
+  link       Generate symlinks
+  push       Push dotfiles
+  pull       Pull dotfiles
   help       Display this message
 
 EOF
@@ -29,11 +30,15 @@ error() {
   exit 1
 } >&2
 
-push_dots() {
+dots_link() {
+  echo 'LINK'
+}
+
+dots_push() {
   echo 'PUSH'
 }
 
-pull_dots() {
+dots_pull() {
   echo 'PULL'
 }
 
@@ -41,11 +46,14 @@ parse_arguments() {
   COMMAND=$1
 
   case "${COMMAND}" in
+    'link')
+      dots_link
+      ;;
     'push')
-      push_dots
+      dots_push
       ;;
     'pull')
-      pull_dots
+      dots_pull
       ;;
     'help')
       usage
