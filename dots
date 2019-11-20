@@ -3,17 +3,21 @@
 CWD=$( pwd )
 DOTFILES_DIR=${DOTFILES_DIR:-~/dotfiles}
 SCRIPT_NAME=${0##*/}
+CONFIG_FILE='config.json'
 
 usage() {
   cat << EOF
 usage: ${SCRIPT_NAME} <command>
 
-Manage dotfiles accross machines.
-Requires a dotsrc.json in ${DOTFILES_DIR}
+Let me help you with your dotfiles.
+All I need is:
+  - git
+  - jq
+  - A ${CONFIG_FILE} in '${DOTFILES_DIR}'
 
 Commands:
-  init       Initialize dotfiles directory
-  sync       Update dotfiles
+  push       Push dotfiles to git repo
+  pull       Pull dotfiles from a git repo
   help       Display this message
 
 EOF
@@ -25,54 +29,23 @@ error() {
   exit 1
 } >&2
 
-push_changes() {
-  git push
+push_dots() {
+  echo 'PUSH'
 }
 
-pull_changes() {
-  file="$DOTFILES_DIR/dotsrc.json"
-  dotsrc=$(<$file)
-
-  if [ -e "$dotsrc" ]; then
-    error "No dotsrc.json found";
-  fi
-
-  git pull
-
-  new_dotsrc=$(<$file)
-
-  if [ -e "$new_dotsrc" ]; then
-    error "No dotsrc.json found";
-  fi
-
-  if [ "$( jq 'has("symlinks")' $new_dotsrc  )" = 'true'  ]; then
-    echo "has symlinks"
-  fi
-}
-
-dots_sync() {
-  cd $DOTFILES_DIR
-  remote_ref=$(git rev-parse origin)
-  local_ref=$(git rev-parse @)
-  merge_base=$(git merge-base @ origin)
-
-  if [ "$local_ref" == "$remote_ref" ]; then
-    return 0;
-  elif [ "$local_ref" == "$merge_base"  ]; then
-    pull_changes
-  elif [ "$remote_ref" == "$merge_base"  ]; then
-    push_changes
-  else
-    error 'Dotfiles diverged: manually fix your repo'
-  fi
+pull_dots() {
+  echo 'PULL'
 }
 
 parse_arguments() {
   COMMAND=$1
 
   case "${COMMAND}" in
-    'sync')
-      dots_sync
+    'push')
+      push_dots
+      ;;
+    'pull')
+      pull_dots
       ;;
     'help')
       usage
